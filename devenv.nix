@@ -2,13 +2,42 @@
 
 {
   # https://devenv.sh/basics/
-  env.GREET = "devenv";
+  # env.GREET = "devenv";
+  env.PULUMI_CONFIG_PASSPHRASE = "";
 
   # https://devenv.sh/packages/
-  packages = [ pkgs.git ];
+  packages = [
+    pkgs.git
+    pkgs.docker
+    pkgs.oras
+    # pkgs.awscli2
+    # pkgs.awsebcli
+    
+    (pkgs.google-cloud-sdk.withExtraComponents( with pkgs.google-cloud-sdk.components; [
+      # gke-gcloud-auth-plugin
+    ]))
+
+    pkgs.black
+    pkgs.mypy
+    pkgs.nil
+    pkgs.python3Packages.python-lsp-server
+    pkgs.pulumi-bin
+
+    pkgs.packer
+    pkgs.jq
+  ];
+
+  difftastic.enable = true;
 
   # https://devenv.sh/languages/
-  # languages.rust.enable = true;
+  languages.python.enable = true;
+  languages.python.venv.enable = true;
+  languages.python.venv.requirements = ''
+    pulumi>=3.153.0,<4.0.0
+    pulumi-gcp>=8.0.0,<9.0.0
+  '';
+
+  # languages.go.enable = true;
 
   # https://devenv.sh/processes/
   # processes.cargo-watch.exec = "cargo-watch";
@@ -17,13 +46,11 @@
   # services.postgres.enable = true;
 
   # https://devenv.sh/scripts/
-  scripts.hello.exec = ''
-    echo hello from $GREET
-  '';
+  # scripts.hello.exec = ''
+  #   echo hello from $GREET
+  # '';
 
   enterShell = ''
-    hello
-    git --version
   '';
 
   # https://devenv.sh/tasks/
@@ -34,8 +61,6 @@
 
   # https://devenv.sh/tests/
   enterTest = ''
-    echo "Running tests"
-    git --version | grep --color=auto "${pkgs.git.version}"
   '';
 
   # https://devenv.sh/git-hooks/
