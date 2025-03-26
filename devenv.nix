@@ -10,12 +10,14 @@
     pkgs.git
     pkgs.docker
     pkgs.oras
+
+    pkgs.hcloud
     # pkgs.awscli2
     # pkgs.awsebcli
     
-    (pkgs.google-cloud-sdk.withExtraComponents( with pkgs.google-cloud-sdk.components; [
-      # gke-gcloud-auth-plugin
-    ]))
+    # (pkgs.google-cloud-sdk.withExtraComponents( with pkgs.google-cloud-sdk.components; [
+    #   # gke-gcloud-auth-plugin
+    # ]))
 
     pkgs.black
     pkgs.mypy
@@ -34,7 +36,7 @@
   languages.python.venv.enable = true;
   languages.python.venv.requirements = ''
     pulumi>=3.153.0,<4.0.0
-    pulumi-gcp>=8.0.0,<9.0.0
+    pulumi-hcloud>=1.0.0,<2.0.0
   '';
 
   # languages.go.enable = true;
