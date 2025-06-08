@@ -1,4 +1,7 @@
 
+# explicitly set tmpdir for better shell suport https://github.com/casey/just/discussions/1269
+set tempdir := "/tmp"
+
 export GARAGE_HOST := 'localhost:3900'
 
 export AWS_ENDPOINT_URL := 'http://localhost:3900'

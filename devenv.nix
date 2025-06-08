@@ -14,36 +14,30 @@ in {
   # https://devenv.sh/packages/
   packages = [
     pkgs.git
+
+    pkgs.pulumi-bin
+    pkgs.hcloud
+    pkgs.packer
+    pkgs.ansible
+
     pkgs.docker
     pkgs.oras
     pkgs.skopeo
     pkgs.regctl
 
-    pkgs.hcloud
     pkgs.s5cmd
     pkgs.ssh-to-age
-    # pkgs.awscli2 # for s3 client
-
-    # pkgs.awsebcli
-    
-    # (pkgs.google-cloud-sdk.withExtraComponents( with pkgs.google-cloud-sdk.components; [
-    #   # gke-gcloud-auth-plugin
-    # ]))
 
     pkgs.black
     pkgs.mypy
     pkgs.nil
-    # pkgs.python3Packages.python-lsp-server
-    pkgs.pulumi-bin
 
     pkgs.just
     pkgs.netcat
     pkgs.openssl
 
     pkgs.nushell
-    # pkgs.garage
     
-    pkgs.packer
 
   ];
 
