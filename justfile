@@ -16,7 +16,9 @@ export AWS_ACCESS_KEY_ID := shell("test -f ~/.aws/credentials && nu -c 'open ~/.
 export AWS_SECRET_KEY_ID := shell("test -f ~/.aws/credentials && nu -c 'open ~/.aws/credentials | from toml | get garage.aws_access_key_id' || echo ''")
 
 export PULUMI_BACKEND_URL := shell('echo "s3://${1}?endpoint=${2}&disableSSL=true&s3ForcePathStyle=true"', "tiny-little-cloud", GARAGE_HOST)
-export PULUMI_CONFIG_PASSPHRASE := shell('ssh-to-age -private-key -i ~/.ssh/id_ed25519 -o -')
+export PULUMI_CONFIG_PASSPHRASE := shell('test -f ~/.ssh/id_ed25519 && ssh-to-age -private-key -i ~/.ssh/id_ed25519 -o - || echo ""')
+
+export ANSIBLE_VAULT_PASSWORD_FILE := "./vault/password.sh"
 
 pulumirun +ARGS:
     #!/usr/bin/env bash
@@ -210,3 +212,22 @@ regctl_ls:
     regctl registry set --tls=disabled localhost:5000
     regctl repo ls localhost:5000
 
+echo-age-key:
+    #!/usr/bin/env bash
+    echo {{ PULUMI_CONFIG_PASSPHRASE }}
+
+echo-hcloud-token:
+    nu -c 'just decrypt | from yaml | get hcloud' || echo ''
+
+encrypt-in-place:
+    ansible-vault encrypt ./vault/secrets.yml
+
+ensure-encrypted:
+    #!/usr/bin/env bash
+    egrep '\$ANSIBLE' vault/secrets.yml > /dev/null || (echo 'Cannot decrypt unencrypted file!' && exit 1)
+
+decrypt-in-place: ensure-encrypted
+    ansible-vault decrypt ./vault/secrets.yml
+
+decrypt: ensure-encrypted
+    ansible-vault decrypt --output - ./vault/secrets.yml 
