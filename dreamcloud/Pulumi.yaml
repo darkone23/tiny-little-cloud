@@ -1,5 +1,5 @@
 name: dreamcloud
-description: A minimal Google Cloud Python Pulumi program
+description: A minimal python pulumi program
 main: main.py
 runtime:
   name: python
@@ -7,7 +7,3 @@ runtime:
     typechecker: mypy    
     toolchain: pip
     virtualenv: ../.devenv/state/venv
-config:
-  pulumi:tags:
-    value:
-      pulumi:template: gcp-python

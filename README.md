@@ -10,7 +10,7 @@ cloud native compute via hetzner
 
 [devenv](https://devenv.sh) and [docker](https://docker.com) for the toolchain
 
-[nixos](https://nixos.org) for the infrastructure
+[nixos](https://nixos.org) for the package manager
 
 ### references:
 

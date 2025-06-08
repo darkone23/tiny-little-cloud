@@ -1,8 +1,14 @@
 { pkgs, lib, config, inputs, ... }:
 
-{
+let
+  customPython3 = pkgs.python3.withPackages(ps: [
+    ps.python-lsp-server    
+  ]);
+in {
   # https://devenv.sh/basics/
-  # env.GREET = "devenv";
+  name = "tiny-little-cloud";
+  # env.GREET = "${config.name}";
+
   env.PULUMI_CONFIG_PASSPHRASE = "";
 
   # https://devenv.sh/packages/
@@ -10,9 +16,14 @@
     pkgs.git
     pkgs.docker
     pkgs.oras
+    pkgs.skopeo
+    pkgs.regctl
 
     pkgs.hcloud
-    # pkgs.awscli2
+    pkgs.s5cmd
+    pkgs.ssh-to-age
+    # pkgs.awscli2 # for s3 client
+
     # pkgs.awsebcli
     
     # (pkgs.google-cloud-sdk.withExtraComponents( with pkgs.google-cloud-sdk.components; [
@@ -22,22 +33,27 @@
     pkgs.black
     pkgs.mypy
     pkgs.nil
-    pkgs.python3Packages.python-lsp-server
+    # pkgs.python3Packages.python-lsp-server
     pkgs.pulumi-bin
 
+    pkgs.just
+    pkgs.netcat
+    pkgs.openssl
+
+    pkgs.nushell
+    # pkgs.garage
+    
     pkgs.packer
-    pkgs.jq
+
   ];
 
   difftastic.enable = true;
 
   # https://devenv.sh/languages/
   languages.python.enable = true;
+  languages.python.package = customPython3;
   languages.python.venv.enable = true;
-  languages.python.venv.requirements = ''
-    pulumi>=3.153.0,<4.0.0
-    pulumi-hcloud>=1.0.0,<2.0.0
-  '';
+  languages.python.venv.requirements = builtins.readFile ./dreamcloud/requirements.txt;
 
   # languages.go.enable = true;
 
