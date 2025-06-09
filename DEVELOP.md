@@ -37,3 +37,20 @@ just zot_oras_example
 just skopeo_cp
 just regctl_ls
 ```
+
+running the packer build against the hetzner account:
+
+```sh
+# you must have ssh auth files:
+test -f ~/.ssh/id_ed25519 || echo "missing required ssh private key file"
+test -f ~/.ssh/id_ed25519.pub || echo "missing required ssh public key file"
+
+# you must write your hcloud token into the project:
+echo 'hcloud: YOUR_HCLOUD_TOKEN_HERE' > vault/secrets.yml && just encrypt-in-place
+
+# verify auth is wired up
+just echo-hcloud-token
+
+# run packer build
+just packerrun build
+```

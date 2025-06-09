@@ -1,24 +1,49 @@
-
+# just: https://just.systems/man/en/
+# 
 # explicitly set tmpdir for better shell suport https://github.com/casey/just/discussions/1269
 set tempdir := "/tmp"
 
-export GARAGE_HOST := 'localhost:3900'
+# some docker containers
+export ZOT_HOST := '127.0.0.1:5000'
+export GARAGE_HOST := '127.0.0.1:3900'
 
-export AWS_ENDPOINT_URL := 'http://localhost:3900'
-export AWS_ENDPOINT := 'http://localhost:3900'
+# local credential file for garage s3
+export GARAGE_AUTH_FILE := env_var("HOME") / ".garage/credentials"
+
+# s5client is leveraging some AWS env vars
+#   https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html
+# 
+export AWS_ENDPOINT_URL := 'http://' + GARAGE_HOST
+export AWS_SHARED_CREDENTIALS_FILE := GARAGE_AUTH_FILE
 export AWS_DEFAULT_REGION := 'garage'
 export AWS_PROFILE := 'garage'
+export AWS_ACCESS_KEY_ID := shell('test -f $1 && nu -c "open $1 | from toml | get garage.aws_access_key_id" || echo ""', GARAGE_AUTH_FILE)
+export AWS_SECRET_KEY_ID := shell('test -f $1 && nu -c "open $1 | from toml | get garage.aws_secret_access_key" || echo ""', GARAGE_AUTH_FILE)
 
-export ZOT_HOST := 'localhost:5000'
+# auth is expecting two files to exist locally:
+# ~/.ssh/id_ed25519 and ~/.ssh/id_ed25519.pub
+export SSH_PRIVATE_KEYFILE := env_var("HOME") / ".ssh/id_ed25519"
+export SSH_PUBLIC_KEYFILE := env_var("HOME") / ".ssh/id_ed25519.pub"
+export SSH_PUBKEY := shell('cat $1 || echo ""', SSH_PUBLIC_KEYFILE)
 
-# run some nushell commands
-export AWS_ACCESS_KEY_ID := shell("test -f ~/.aws/credentials && nu -c 'open ~/.aws/credentials | from toml | get garage.aws_access_key_id' || echo ''")
-export AWS_SECRET_KEY_ID := shell("test -f ~/.aws/credentials && nu -c 'open ~/.aws/credentials | from toml | get garage.aws_access_key_id' || echo ''")
-
+# configure some utilities for pulumi
+#   use ssh private key as ansible and pulumi secret-passphrase
 export PULUMI_BACKEND_URL := shell('echo "s3://${1}?endpoint=${2}&disableSSL=true&s3ForcePathStyle=true"', "tiny-little-cloud", GARAGE_HOST)
-export PULUMI_CONFIG_PASSPHRASE := shell('test -f ~/.ssh/id_ed25519 && ssh-to-age -private-key -i ~/.ssh/id_ed25519 -o - || echo ""')
-
+export PULUMI_CONFIG_PASSPHRASE := shell('test -f $1 && ssh-to-age -private-key -i $1 -o - || echo ""', SSH_PRIVATE_KEYFILE)
 export ANSIBLE_VAULT_PASSWORD_FILE := "./vault/password.sh"
+
+hcloudrun +ARGS: 
+    #!/usr/bin/env bash
+    
+    export HCLOUD_TOKEN=$(just echo-hcloud-token)
+    exec hcloud {{ ARGS }}
+
+packerrun +ARGS: 
+    #!/usr/bin/env bash
+    export HCLOUD_TOKEN=$(just echo-hcloud-token)
+    export PACKER_PROJECT="hetzner-nixos-amd64"
+    cd ./dreamcloud/packerbuild/${PACKER_PROJECT}
+    exec packer {{ ARGS }} main.pkr.hcl
 
 pulumirun +ARGS:
     #!/usr/bin/env bash
@@ -40,8 +65,10 @@ s3 +ARGS:
     #!/usr/bin/env bash
 
     # set -euxo
+    #
+    env | grep AWS
 
-    exec s5cmd --endpoint-url=$AWS_ENDPOINT {{ ARGS }}
+    exec s5cmd --endpoint-url=$AWS_ENDPOINT_URL {{ ARGS }}
 
 garage +ARGS:
     #!/usr/bin/env bash
@@ -83,14 +110,14 @@ garage_aws_keymagic KEY:
     KEY_SECRET="$(awk '/Secret key/ { print $NF }' $KEYFILE)"
 
     mkdir -p ~/.aws
-    touch ~/.aws/credentials
-    chmod 600 ~/.aws/credentials
+    touch {{ GARAGE_AUTH_FILE }}
+    chmod 600 {{ GARAGE_AUTH_FILE }}
 
     # TODO: need to strip this entry from toml before writing...
     # does not support 'update'
     # 
     # 
-    cat << EOF >> ~/.aws/credentials
+    cat << EOF >> {{ GARAGE_AUTH_FILE }}
     [garage]
     aws_access_key_id="$KEY_ID"
     aws_secret_access_key="$KEY_SECRET"
@@ -98,7 +125,7 @@ garage_aws_keymagic KEY:
 
     rm -f $KEYFILE
 
-    echo "wrote garage profile to ~/.aws/credentials"
+    echo "wrote garage profile to {{ GARAGE_AUTH_FILE }}"
 
 
 garage_create_key KEY:
@@ -183,7 +210,7 @@ skopeo_cp:
        --multi-arch=all \
        --format=oci \
        docker://busybox:latest \
-       docker://localhost:5000/busybox:latest
+       docker://{{ ZOT_HOST }}/busybox:latest
 
 zot_oras_example:
     #!/usr/bin/env bash
@@ -196,21 +223,21 @@ zot_oras_example:
     # create and push the artifact
     echo 'hello world' > $ARTIFACT 
     oras push \
-        --plain-http localhost:5000/hello-artifact:v1 \
+        --plain-http {{ ZOT_HOST }}/hello-artifact:v1 \
         --artifact-type application/vnd.acme.rocket.config \
         ./$ARTIFACT
 
     rm $ARTIFACT
 
     # now show we can pull and use the artifact
-    oras pull localhost:5000/hello-artifact:v1
+    oras pull {{ ZOT_HOST }}/hello-artifact:v1
     cat $ARTIFACT
     rm ./$ARTIFACT
 
 regctl_ls:
     # https://zotregistry.dev/v2.0.1/user-guides/user-guide-datapath/#common-tasks-using-regclient-for-oci-images
-    regctl registry set --tls=disabled localhost:5000
-    regctl repo ls localhost:5000
+    regctl registry set --tls=disabled {{ ZOT_HOST }}
+    regctl repo ls {{ ZOT_HOST }}
 
 echo-age-key:
     #!/usr/bin/env bash
