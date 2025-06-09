@@ -1,0 +1,5 @@
+- improve nixos image:
+  - use lix
+  - enable flakes
+  - non-root nixos user
+  - shrink image size at end

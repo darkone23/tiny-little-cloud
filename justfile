@@ -4,8 +4,8 @@
 set tempdir := "/tmp"
 
 # some docker containers
-export ZOT_HOST := '127.0.0.1:5000'
-export GARAGE_HOST := '127.0.0.1:3900'
+export ZOT_HOST := 'localhost:5000'
+export GARAGE_HOST := 'localhost:3900'
 
 # local credential file for garage s3
 export GARAGE_AUTH_FILE := env_var("HOME") / ".garage/credentials"
@@ -196,12 +196,18 @@ start_local_docker_garage:
       -v $DATA_DIR/garage/data:/var/lib/garage/data \
       dxflrs/garage:v1.1.0
 
-start_local_docker_zot_amd64:
+start_local_docker_zot ARCH:
     docker start zotd || docker run \
       -d \
       --name zotd \
       --network host \
-      ghcr.io/project-zot/zot-linux-amd64:latest
+      ghcr.io/project-zot/zot-{{ ARCH }}:latest
+
+start_local_docker_zot_amd64:
+    just start_local_docker_zot linux-amd64
+
+start_local_docker_zot_arm64:
+    just start_local_docker_zot linux-arm64
 
 skopeo_cp:
     # https://zotregistry.dev/v2.0.1/user-guides/user-guide-datapath/#common-tasks-using-skopeo-for-oci-images

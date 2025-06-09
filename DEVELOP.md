@@ -32,7 +32,11 @@ this repo is included oras which is recommending a zot backend
 
 ```sh
 # assuming intel hardware
-just start_local_docker_zot_amd64
+# just start_local_docker_zot_amd64
+
+# assuming arm hardware
+# just start_local_docker_zot_arm64
+
 just zot_oras_example
 just skopeo_cp
 just regctl_ls
@@ -52,5 +56,6 @@ echo 'hcloud: YOUR_HCLOUD_TOKEN_HERE' > vault/secrets.yml && just encrypt-in-pla
 just echo-hcloud-token
 
 # run packer build
+just packerrun init
 just packerrun build
 ```
